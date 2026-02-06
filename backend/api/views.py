@@ -6,6 +6,16 @@ from .serializers import MarketSerializer, OutcomeSerializer, PositionSerializer
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+
+def is_admin_user(user):
+    """
+    Check if user is admin (works with both Django admin and Supabase admin)
+    """
+    if not user or not user.is_authenticated:
+        return False
+    
+    return user.is_superuser or user.is_staff or user.groups.filter(name='Admin').exists()
+
 class MarketViewSet(viewsets.ModelViewSet):
     queryset = Market.objects.all()
     serializer_class = MarketSerializer
@@ -25,13 +35,13 @@ class MarketViewSet(viewsets.ModelViewSet):
     def resolve(self, request, pk=None):
         market = self.get_object()
         
-        # 1. Check Permission
-        if not request.user.has_perm('api.can_resolve_market'):
-            return Response({'error': 'You do not have permission to resolve markets.'}, 
+        # 1. Check Permission (works with both Django and Supabase auth)
+        if not is_admin_user(request.user) and not request.user.has_perm('api.can_resolve_market'):
+            return Response({'error': 'You do not have permission to resolve markets. You must be logged into Django/Supabase as admin.'}, 
                             status=status.HTTP_403_FORBIDDEN)
 
         # 2. Separation of Duties
-        if market.created_by == request.user and not request.user.is_superuser:
+        if market.created_by == request.user and not is_admin_user(request.user):
              return Response({'error': 'Separation of Duties Violation: You cannot resolve a market you created.'}, 
                             status=status.HTTP_403_FORBIDDEN)
 
@@ -130,10 +140,10 @@ class UserBanView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request, user_id):
-        # Check if user has permission to ban
-        if not request.user.is_superuser and not request.user.has_perm('api.can_ban_users'):
+        # Check if user has permission to ban (works with both Django and Supabase auth)
+        if not is_admin_user(request.user) and not request.user.has_perm('api.can_ban_users'):
             return Response(
-                {'error': 'You do not have permission to ban users.'},
+                {'error': 'You do not have permission to ban users. You must be logged into Django/Supabase as admin.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -172,10 +182,10 @@ class UserUnbanView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request, user_id):
-        # Check if user has permission to ban
-        if not request.user.is_superuser and not request.user.has_perm('api.can_ban_users'):
+        # Check if user has permission to ban (works with both Django and Supabase auth)
+        if not is_admin_user(request.user) and not request.user.has_perm('api.can_ban_users'):
             return Response(
-                {'error': 'You do not have permission to unban users.'},
+                {'error': 'You do not have permission to unban users. You must be logged into Django/Supabase as admin.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         

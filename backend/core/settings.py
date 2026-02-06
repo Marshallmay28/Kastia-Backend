@@ -64,9 +64,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'api.supabase_auth.SupabaseAuthBackend',  # Supabase JWT auth
+    'django.contrib.auth.backends.ModelBackend',  # Default Django auth
+]
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'api.supabase_auth.SupabaseTokenAuthentication',  # Supports both Django tokens and Supabase JWT
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
