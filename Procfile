@@ -1,1 +1,1 @@
-web: cd backend && pip install --no-cache-dir -r requirements.txt && python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2
+web: cd backend && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2
