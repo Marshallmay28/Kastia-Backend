@@ -1,11 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import MarketViewSet, PositionViewSet, TradeViewSet, LoginView, ChangePasswordView, UserBanView, UserUnbanView
+from .group_views import GroupViewSet
 
 router = DefaultRouter()
 router.register(r'markets', MarketViewSet)
 router.register(r'positions', PositionViewSet, basename='position')
 router.register(r'trades', TradeViewSet)
+router.register(r'groups', GroupViewSet, basename='group')
 
 urlpatterns = [
     path('', include(router.urls)),
