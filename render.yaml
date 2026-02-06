@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: kastia-backend
+    runtime: python
+    pythonVersion: 3.11
+    buildCommand: "cd backend && pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput"
+    startCommand: "cd backend && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: SECRET_KEY
+        value: django-insecure-2c0afy!%b5qro2wm5v)*j6zrv+5tzv7u56zt+j%9x=i#y8(#!1
+      - key: DEBUG
+        value: "True"
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings

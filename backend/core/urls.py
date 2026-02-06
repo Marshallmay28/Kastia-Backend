@@ -16,13 +16,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 
 # Admin Site Customization
 admin.site.site_header = "Kastia Administration"
 admin.site.site_title = "Kastia Admin Portal"
 admin.site.index_title = "Welcome to Kastia Management"
+
+@require_http_methods(["GET"])
+def health(request):
+    """Health check endpoint"""
+    return JsonResponse({
+        "status": "online",
+        "message": "Kastia Backend is running",
+        "version": "1.0.0"
+    })
 
 @require_http_methods(["GET"])
 def root(request):
@@ -43,6 +52,7 @@ def root(request):
     """, content_type="text/html")
 
 urlpatterns = [
+    path('health/', health),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('', root),
