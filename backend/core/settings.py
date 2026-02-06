@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
-load_dotenv()
+# Try to load .env file if it exists (for local development)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,8 +31,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-2c0afy!%b5qro2wm5v)*j6zrv+5tzv7u56zt+j%9x=i#y8(#!1')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Set DEBUG=True in Render environment variables if you want to see errors
-DEBUG = os.getenv('DEBUG') == 'True'
+# Default to False (production safe), only True if explicitly set
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*.onrender.com', 'kastia-backend.onrender.com', '*']
 
