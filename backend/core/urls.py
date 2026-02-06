@@ -16,44 +16,37 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 
 # Admin Site Customization
 admin.site.site_header = "Kastia Administration"
 admin.site.site_title = "Kastia Admin Portal"
 admin.site.index_title = "Welcome to Kastia Management"
 
-@require_http_methods(["GET"])
 def health(request):
     """Health check endpoint"""
     return JsonResponse({
         "status": "online",
         "message": "Kastia Backend is running",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "endpoints": {
+            "admin": "/admin/",
+            "api": "/api/",
+            "health": "/health/"
+        }
     })
 
-@require_http_methods(["GET"])
-def root(request):
-    """Redirect root to admin panel with HTML"""
-    return HttpResponse("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Kastia Backend - Redirecting...</title>
-        <script>
-            window.location.replace('/admin/');
-        </script>
-    </head>
-    <body>
-        <p>Redirecting to admin panel... <a href="/admin/">Click here if not redirected</a></p>
-    </body>
-    </html>
-    """, content_type="text/html")
+def redirect_to_admin(request):
+    """Root redirect to admin"""
+    return JsonResponse({
+        "message": "Kastia Backend API",
+        "admin": "/admin/",
+        "api": "/api/"
+    })
 
 urlpatterns = [
-    path('health/', health),
+    path('health/', health, name='health'),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('', root),
+    path('', redirect_to_admin, name='root'),
 ]
