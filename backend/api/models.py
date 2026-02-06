@@ -12,6 +12,10 @@ class Profile(models.Model):
     tier = models.CharField(max_length=10, choices=[('TIER_1', 'Tier 1'), ('TIER_2', 'Tier 2'), ('TIER_3', 'Tier 3')], default='TIER_1')
     avatarUrl = models.URLField(blank=True, null=True)
     joinedDate = models.DateField(auto_now_add=True)
+    is_banned = models.BooleanField(default=False)
+    ban_reason = models.TextField(blank=True, null=True)
+    banned_at = models.DateTimeField(blank=True, null=True)
+    banned_by = models.ForeignKey(User, related_name='banned_users', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username}'s profile"
@@ -75,6 +79,8 @@ class AuditLog(models.Model):
         ('HALT_TRADING', 'Halt Trading'),
         ('CANCEL_ORDER', 'Cancel Order'),
         ('VIEW_SENSITIVE', 'View Sensitive Data'),
+        ('BAN_USER', 'Ban User'),
+        ('UNBAN_USER', 'Unban User'),
         ('OTHER', 'Other'),
     ]
 

@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Market, Outcome, Position, Trade, Profile, AuditLog
 from .serializers import MarketSerializer, OutcomeSerializer, PositionSerializer, TradeSerializer, UserSerializer
+from django.contrib.auth.models import User
+from django.utils import timezone
 
 class MarketViewSet(viewsets.ModelViewSet):
     queryset = Market.objects.all()
@@ -78,6 +80,18 @@ class LoginView(ObtainAuthToken):
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
+        
+        # Check if user is banned
+        try:
+            profile = Profile.objects.get(user=user)
+            if profile.is_banned:
+                return Response(
+                    {'error': 'Your account has been banned. Please contact support.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        except Profile.DoesNotExist:
+            pass
+        
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
@@ -110,3 +124,84 @@ class ChangePasswordView(APIView):
         
         # Regenerate token if needed, or just return success
         return Response({'status': 'Password updated successfully'})
+
+
+class UserBanView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, user_id):
+        # Check if user has permission to ban
+        if not request.user.is_superuser and not request.user.has_perm('api.can_ban_users'):
+            return Response(
+                {'error': 'You do not have permission to ban users.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            user = User.objects.get(id=user_id)
+            profile = Profile.objects.get(user=user)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except Profile.DoesNotExist:
+            return Response({'error': 'User profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        ban_reason = request.data.get('ban_reason', 'No reason provided')
+        
+        profile.is_banned = True
+        profile.ban_reason = ban_reason
+        profile.banned_at = timezone.now()
+        profile.banned_by = request.user
+        profile.save()
+        
+        AuditLog.objects.create(
+            user=request.user,
+            action='BAN_USER',
+            target_object=f"User: {user.username}",
+            details=f"User {user.username} banned by {request.user.username}. Reason: {ban_reason}"
+        )
+        
+        return Response({
+            'status': 'User banned successfully',
+            'user_id': user_id,
+            'username': user.username,
+            'ban_reason': ban_reason
+        })
+
+
+class UserUnbanView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, user_id):
+        # Check if user has permission to ban
+        if not request.user.is_superuser and not request.user.has_perm('api.can_ban_users'):
+            return Response(
+                {'error': 'You do not have permission to unban users.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            user = User.objects.get(id=user_id)
+            profile = Profile.objects.get(user=user)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except Profile.DoesNotExist:
+            return Response({'error': 'User profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        profile.is_banned = False
+        profile.ban_reason = None
+        profile.banned_at = None
+        profile.banned_by = None
+        profile.save()
+        
+        AuditLog.objects.create(
+            user=request.user,
+            action='UNBAN_USER',
+            target_object=f"User: {user.username}",
+            details=f"User {user.username} unbanned by {request.user.username}"
+        )
+        
+        return Response({
+            'status': 'User unbanned successfully',
+            'user_id': user_id,
+            'username': user.username
+        })
