@@ -17,12 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 # Admin Site Customization
 admin.site.site_header = "Kastia Administration"
 admin.site.site_title = "Kastia Admin Portal"
 admin.site.index_title = "Welcome to Kastia Management"
 
+@require_http_methods(["GET", "OPTIONS"])
 def health(request):
     """Health check endpoint"""
     return JsonResponse({
@@ -36,6 +39,7 @@ def health(request):
         }
     })
 
+@require_http_methods(["GET", "OPTIONS"])
 def redirect_to_admin(request):
     """Root redirect to admin"""
     return JsonResponse({
