@@ -16,15 +16,34 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
+from django.http import HttpResponse
+from django.views.decorators.http import require_http_methods
 
 # Admin Site Customization
 admin.site.site_header = "Kastia Administration"
 admin.site.site_title = "Kastia Admin Portal"
 admin.site.index_title = "Welcome to Kastia Management"
 
+@require_http_methods(["GET"])
+def root(request):
+    """Redirect root to admin panel with HTML"""
+    return HttpResponse("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Kastia Backend - Redirecting...</title>
+        <script>
+            window.location.replace('/admin/');
+        </script>
+    </head>
+    <body>
+        <p>Redirecting to admin panel... <a href="/admin/">Click here if not redirected</a></p>
+    </body>
+    </html>
+    """, content_type="text/html")
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('', RedirectView.as_view(url='/admin/', permanent=False)),
+    path('', root),
 ]
