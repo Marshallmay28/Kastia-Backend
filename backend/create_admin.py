@@ -8,13 +8,24 @@ django.setup()
 
 from django.contrib.auth.models import User
 
-# Create superuser if it doesn't exist
-if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@kastia.com', 'admin123')
-    print('✓ Superuser "admin" created successfully')
-    print('  Username: admin')
-    print('  Password: admin123')
-    print('  Access at: http://127.0.0.1:8000/admin/')
+# Get password from environment or use default
+admin_password = os.getenv('ADMIN_PASSWORD', 'admin123')
+
+# Create or update superuser
+user, created = User.objects.get_or_create(username='admin', defaults={
+    'email': 'admin@kastia.com',
+    'is_superuser': True,
+    'is_staff': True
+})
+
+if created:
+    user.set_password(admin_password)
+    user.save()
+    print(f'✓ Superuser "admin" created successfully')
+    print(f'  Password: {admin_password}')
 else:
-    print('✓ Superuser "admin" already exists')
-    print('  Access at: http://127.0.0.1:8000/admin/')
+    user.set_password(admin_password)
+    user.save()
+    print(f'✓ Superuser "admin" password updated to: {admin_password}')
+
+print(f'  Access at: http://127.0.0.1:8000/admin/')
