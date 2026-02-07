@@ -9,10 +9,11 @@ django.setup()
 
 from django.contrib.auth.models import User
 
-# Get password from environment (explicit ADMIN_PASSWORD > DATABASE_URL password > default)
+# Get credentials from environment or use specific defaults
+admin_username = os.getenv('ADMIN_USERNAME', 'kastia,25')
 admin_password = os.getenv('ADMIN_PASSWORD')
 
-# If not set, try to extract from DATABASE_URL
+# If password not set, try to extract from DATABASE_URL
 if not admin_password:
     db_url = os.getenv('DATABASE_URL')
     if db_url:
@@ -23,12 +24,12 @@ if not admin_password:
         except Exception:
             pass
 
-# Fallback to default
+# Fallback to specific default password
 if not admin_password:
-    admin_password = 'admin123'
+    admin_password = os.getenv('DEFAULT_ADMIN_PASSWORD', 'Kastia@25')
 
 # Create or update superuser
-user, created = User.objects.get_or_create(username='admin', defaults={
+user, created = User.objects.get_or_create(username=admin_username, defaults={
     'email': 'admin@kastia.com',
     'is_superuser': True,
     'is_staff': True
@@ -37,11 +38,12 @@ user, created = User.objects.get_or_create(username='admin', defaults={
 if created:
     user.set_password(admin_password)
     user.save()
-    print(f'✓ Superuser "admin" created successfully')
+    print(f'✓ Superuser "{admin_username}" created successfully')
     print(f'  Password: {admin_password}')
 else:
     user.set_password(admin_password)
     user.save()
-    print(f'✓ Superuser "admin" password updated to: {admin_password}')
+    print(f'✓ Superuser "{admin_username}" updated successfully')
+    print(f'  Password: {admin_password}')
 
 print(f'  Access at: http://127.0.0.1:8000/admin/')
